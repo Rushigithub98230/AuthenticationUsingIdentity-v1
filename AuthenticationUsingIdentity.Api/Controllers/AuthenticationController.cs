@@ -10,7 +10,6 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Reset;
@@ -66,7 +65,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     var message = new Message(new String[] { request.Email! }, "Confirmation email Link", confirmationLink);
                     _emailService.sendEmail(message);
                     return StatusCode(StatusCodes.Status200OK,
-                    new Response { Status = "Success", Message = $"User created successfully", IsSuccess=true});
+                    new Response { Status = "Success", Message = $"User created successfully", IsSuccess = true });
 
                 }
 
@@ -147,7 +146,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     {
                         Status = "Successs",
                         Message = $"We have sent an otp to your email {user.Email}",
-                        IsSuccess=true
+                        IsSuccess = true
                     });
                 }
             }
