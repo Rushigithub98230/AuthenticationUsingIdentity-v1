@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using AuthenticationUsingIdentity.Api.Models;
-using AuthenticationUsingIdentity.Api.Models.Authentication.SignUp;
+using AuthenticationUsingIdentity.Service   .Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Services;
 using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Login;
@@ -14,7 +14,7 @@ using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Reset;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
 
 namespace AuthenticationUsingIdentity.Api.Controllers
 {
@@ -27,12 +27,14 @@ namespace AuthenticationUsingIdentity.Api.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
+        private readonly IUserManagement _userManagement;
         public AuthenticationController(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<IdentityUser> signInManager,
             IConfiguration configuration,
-            IEmailService emailService
+            IEmailService emailService,     
+            IUserManagement userManagement
             )
         {
             _userManager = userManager;
@@ -40,86 +42,22 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             _configuration = configuration;
             _emailService = emailService;
             _signInManager = signInManager;
+            _userManagement = userManagement;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register([FromBody] RegisterUser request, string role)
+        public async Task<IActionResult> Register([FromBody] RegisterUser request)
         {
             try
             {
-                // Check if the user already exists
-                var existingUser = await _userManager.FindByEmailAsync(request.Email);
-                if (existingUser != null)
-                {
-                    return StatusCode(StatusCodes.Status403Forbidden, new Response
-                    {
-                        Status = "Error",
-                        Message = "User already exists"
-                    });
-                }
 
-                // Create a new user
-                var newUser = new IdentityUser
-                {
-                    Email = request.Email,
-                    UserName = request.UserName,
-                    SecurityStamp = Guid.NewGuid().ToString(),
-                    TwoFactorEnabled = true
-                };
-
-                // Check if the specified role exists
-                if (await _roleManager.RoleExistsAsync(role))
-                {
-                    // Create the user
-                    var createUserResult = await _userManager.CreateAsync(newUser, request.Password);
-
-                    if (createUserResult.Succeeded)
-                    {
-                        // Add the user to the specified role
-                        var assignRoleResult = await _userManager.AddToRoleAsync(newUser, role);
-
-                        //below we are sending email to user with token for confirmation of email
-                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
-                        //below "Authentication" is controller name
-                        var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { token, email = newUser.Email }, Request.Scheme);
-                        var message = new Message(new String[] { newUser.Email! }, "Confirmation email Link", confirmationLink);
-                        _emailService.sendEmail(message);
-
-
-                        if (assignRoleResult.Succeeded)
-                        {
-                            return StatusCode(StatusCodes.Status201Created, new Response
-                            {
-                                Status = "Success",
-                                Message = $"User created and assigned to role successfully! and email send to {newUser.Email}  successfully"
-                            });
-                        }
-
-                        // Clean up and return error if adding the user to the role fails
-                        await _userManager.DeleteAsync(newUser);
-                        var errorMessage = string.Join(", ", createUserResult.Errors.Select(error => error.Description));
-                        return StatusCode(StatusCodes.Status500InternalServerError, new Response
-                        {
-                            Status = "Error",
-                            Message = $"User creation successful, but role assignment failed: {errorMessage}"
-                        });
-                    }
-
-                    // Clean up and return error if user creation fails
-                    await _userManager.DeleteAsync(newUser);
-                    var userCreationErrorMessage = string.Join(", ", createUserResult.Errors.Select(error => error.Description));
-                    return StatusCode(StatusCodes.Status500InternalServerError, new Response
-                    {
-                        Status = "Error",
-                        Message = $"User creation failed: {userCreationErrorMessage}"
-                    });
-                }
-
-                return StatusCode(StatusCodes.Status400BadRequest, new Response
-                {
-                    Status = "Error",
-                    Message = $"Role '{role}' does not exist"
-                });
+                var token = await _userManagement.CreateUserWithTokenAsync(request);
+                //below "Authentication" is controller name
+                var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { token=token.Response, email = request.Email }, Request.Scheme);
+                var message = new Message(new String[] { request.Email! }, "Confirmation email Link", confirmationLink);
+                _emailService.sendEmail(message);
+                return StatusCode(StatusCodes.Status200OK,
+                new Response { Status = "Success", Message = token.Message });
             }
             catch (Exception ex)
             {
@@ -256,7 +194,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
 
             var user = await _userManager.FindByEmailAsync(email);
             if (user != null)
-            {
+            {  //generating token for password reset request
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var forgetPasswordlink = Url.Action(nameof(ResetPassword), "Authentication", new { token, email = user.Email }, Request.Scheme);
                 var message = new Message(new string[] { user.Email }, "Forget Password Link", forgetPasswordlink);

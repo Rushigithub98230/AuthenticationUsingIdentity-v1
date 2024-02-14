@@ -51,21 +51,21 @@ namespace AuthenticationUsingIdentity.Api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "ee5b404f-bb63-4a90-b66f-2fa42b3c61ce",
+                            Id = "d29d354a-588c-46c3-8047-795bc4305c2a",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "c688ecb7-a434-496a-82bb-4471fe629d1d",
+                            Id = "a2018824-ad52-41a1-a1fc-1e58492d534c",
                             ConcurrencyStamp = "2",
                             Name = "User",
                             NormalizedName = "User"
                         },
                         new
                         {
-                            Id = "0a84dd9b-baf2-430e-8fa8-a5ed21a3cd60",
+                            Id = "eac5c4e1-2700-4ad5-93b1-b1af41320bc9",
                             ConcurrencyStamp = "3",
                             Name = "HR",
                             NormalizedName = "HR"

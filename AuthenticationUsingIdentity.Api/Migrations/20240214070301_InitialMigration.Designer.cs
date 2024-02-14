@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthenticationUsingIdentity.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240212061400_InitialMigration")]
+    [Migration("20240214070301_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -50,6 +50,29 @@ namespace AuthenticationUsingIdentity.Api.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "d29d354a-588c-46c3-8047-795bc4305c2a",
+                            ConcurrencyStamp = "1",
+                            Name = "Admin",
+                            NormalizedName = "Admin"
+                        },
+                        new
+                        {
+                            Id = "a2018824-ad52-41a1-a1fc-1e58492d534c",
+                            ConcurrencyStamp = "2",
+                            Name = "User",
+                            NormalizedName = "User"
+                        },
+                        new
+                        {
+                            Id = "eac5c4e1-2700-4ad5-93b1-b1af41320bc9",
+                            ConcurrencyStamp = "3",
+                            Name = "HR",
+                            NormalizedName = "HR"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

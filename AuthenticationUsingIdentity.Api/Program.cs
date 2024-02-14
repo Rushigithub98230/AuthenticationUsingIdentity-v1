@@ -61,6 +61,7 @@ var emailConfig = builder.Configuration
 builder.Services.AddSingleton(emailConfig);
 
 builder.Services.AddScoped<IEmailService,EmailService>();
+builder.Services.AddScoped<IUserManagement,UserManagement>();
 
 
 var app = builder.Build();
