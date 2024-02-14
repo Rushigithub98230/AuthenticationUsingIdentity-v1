@@ -1,5 +1,6 @@
 ﻿using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
+using AuthenticationUsingIdentity.Service.Models.Authentication.User;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -11,8 +12,8 @@ namespace AuthenticationUsingIdentity.Service.Services
 {
     public interface IUserManagement
     {
-        Task<ApiResponse<string>> CreateUserWithTokenAsync(RegisterUser request);
-        Task<ApiResponse<List<string>>> AssignRoleToUserAsync(IEnumerable<string> roles, IdentityUser newUser);
+        Task<ApiResponse<CreateUserResponse>> CreateUserWithTokenAsync(RegisterUser request);
+        Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, IdentityUser newUser);
 
     }
 }

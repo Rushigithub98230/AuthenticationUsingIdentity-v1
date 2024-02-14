@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using AuthenticationUsingIdentity.Api.Models;
-using AuthenticationUsingIdentity.Service   .Models.Authentication.SignUp;
+using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Services;
 using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Login;
@@ -33,7 +33,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             RoleManager<IdentityRole> roleManager,
             SignInManager<IdentityUser> signInManager,
             IConfiguration configuration,
-            IEmailService emailService,     
+            IEmailService emailService,
             IUserManagement userManagement
             )
         {
@@ -51,13 +51,27 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             try
             {
 
-                var token = await _userManagement.CreateUserWithTokenAsync(request);
-                //below "Authentication" is controller name
-                var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { token=token.Response, email = request.Email }, Request.Scheme);
-                var message = new Message(new String[] { request.Email! }, "Confirmation email Link", confirmationLink);
-                _emailService.sendEmail(message);
-                return StatusCode(StatusCodes.Status200OK,
-                new Response { Status = "Success", Message = token.Message });
+                var tokenResponse = await _userManagement.CreateUserWithTokenAsync(request);
+                if (tokenResponse.IsSuccess)
+                {
+                    if (tokenResponse != null && tokenResponse.Response != null)
+                    {
+
+                        await _userManagement.AssignRoleToUserAsync(request.Roles, tokenResponse.Response.User);
+                    }
+
+
+                    //below "Authentication" is controller name
+                    var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { token = tokenResponse.Response.Token, email = request.Email }, Request.Scheme);
+                    var message = new Message(new String[] { request.Email! }, "Confirmation email Link", confirmationLink);
+                    _emailService.sendEmail(message);
+                    return StatusCode(StatusCodes.Status200OK,
+                    new Response { Status = "Success", Message = $"User created successfully", IsSuccess=true});
+
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                 new Response { Status = "Failed", Message = tokenResponse.Message, IsSuccess = false });
             }
             catch (Exception ex)
             {
@@ -115,25 +129,27 @@ namespace AuthenticationUsingIdentity.Api.Controllers
 
             //checking the user 
             var user = await _userManager.FindByNameAsync(loginModel.UserName);
-            var result =await  _userManager.CheckPasswordAsync(user, loginModel.Password);
-            if (result) { 
-            if (user.TwoFactorEnabled)
+            var result = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+            if (result)
             {
-                /*
-                 * Signs out the user using the _signInManager.SignOutAsync method.
-                  Signs in the user using the _signInManager.PasswordSignInAsync method with the user's email and password.
-                  This logs the user in to the application.*/
-                await _signInManager.SignOutAsync();
-                await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, true);
-                var twoFacAuthToken = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
-                var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", twoFacAuthToken);
-                _emailService.sendEmail(twoFacAuthMessage);
-                return StatusCode(StatusCodes.Status200OK, new Response
+                if (user.TwoFactorEnabled)
                 {
-                    Status = "Successs",
-                    Message = $"We have sent an otp to your email {user.Email}"
-                });
-            }
+                    /*
+                     * Signs out the user using the _signInManager.SignOutAsync method.
+                      Signs in the user using the _signInManager.PasswordSignInAsync method with the user's email and password.
+                      This logs the user in to the application.*/
+                    await _signInManager.SignOutAsync();
+                    await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, true);
+                    var twoFacAuthToken = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+                    var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", twoFacAuthToken);
+                    _emailService.sendEmail(twoFacAuthMessage);
+                    return StatusCode(StatusCodes.Status200OK, new Response
+                    {
+                        Status = "Successs",
+                        Message = $"We have sent an otp to your email {user.Email}",
+                        IsSuccess=true
+                    });
+                }
             }
 
 
