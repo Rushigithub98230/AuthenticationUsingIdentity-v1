@@ -1,4 +1,5 @@
 using AuthenticationUsingIdentity.Api.Models;
+using AuthenticationUsingIdentity.Data.Models;
 using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Service.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,7 +21,7 @@ options.UseSqlServer(
         builder.
         Configuration.GetConnectionString("Connection")));
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 

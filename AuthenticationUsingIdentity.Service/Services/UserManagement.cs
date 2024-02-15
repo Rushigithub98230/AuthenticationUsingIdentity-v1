@@ -1,4 +1,5 @@
-﻿using AuthenticationUsingIdentity.Service.Models;
+﻿using AuthenticationUsingIdentity.Data.Models;
+using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
@@ -19,14 +20,14 @@ namespace AuthenticationUsingIdentity.Service.Services
 {
     public class UserManagement : IUserManagement
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public UserManagement(
-            UserManager<IdentityUser> userManager,
+            UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<IdentityUser> signInManager,
+            SignInManager<ApplicationUser> signInManager,
             IConfiguration configuration,
             IEmailService emailService
             )
@@ -47,7 +48,7 @@ namespace AuthenticationUsingIdentity.Service.Services
             }
 
             // Create a new user
-            var newUser = new IdentityUser
+            var newUser = new ApplicationUser
             {
                 Email = request.Email,
                 UserName = request.UserName,
@@ -95,7 +96,7 @@ namespace AuthenticationUsingIdentity.Service.Services
         }
 
 
-        public async Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, IdentityUser newUser)
+        public async Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, ApplicationUser newUser)
         {
             var assignRoleResultList = new List<string>();
             foreach (var role in roles)

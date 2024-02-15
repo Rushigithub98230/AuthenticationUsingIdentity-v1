@@ -1,5 +1,6 @@
 ﻿
 
+using AuthenticationUsingIdentity.Data.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace AuthenticationUsingIdentity.Service.Models.User
@@ -9,6 +10,6 @@ namespace AuthenticationUsingIdentity.Service.Models.User
         public string Token { get; set; } = null!; //it should be non nullable
         public bool IsTwoFactorEnabled { get; set; }
 
-        public IdentityUser User { get; set; } = null!; //it should be non nullable
+        public ApplicationUser User { get; set; } = null!; //it should be non nullable
     }
 }

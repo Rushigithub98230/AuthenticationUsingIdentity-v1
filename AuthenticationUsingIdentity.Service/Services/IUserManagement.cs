@@ -1,4 +1,5 @@
-﻿using AuthenticationUsingIdentity.Service.Models;
+﻿using AuthenticationUsingIdentity.Data.Models;
+using AuthenticationUsingIdentity.Service.Models;
 using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
@@ -15,10 +16,10 @@ namespace AuthenticationUsingIdentity.Service.Services
     public interface IUserManagement
     {
         Task<ApiResponse<CreateUserResponse>> CreateUserWithTokenAsync(RegisterUser request);
-        Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, IdentityUser newUser);
+        Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, ApplicationUser newUser);
         Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginmodel);
 
 
 
-    }
+    }       
 }

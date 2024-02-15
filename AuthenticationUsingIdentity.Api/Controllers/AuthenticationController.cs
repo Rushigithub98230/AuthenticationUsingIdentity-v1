@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Reset;
 using AuthenticationUsingIdentity.Service.Models.User;
+using AuthenticationUsingIdentity.Data.Models;
 
 
 namespace AuthenticationUsingIdentity.Api.Controllers
@@ -22,16 +23,16 @@ namespace AuthenticationUsingIdentity.Api.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IUserManagement _userManagement;
         public AuthenticationController(
-            UserManager<IdentityUser> userManager,
+            UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<IdentityUser> signInManager,
+            SignInManager<ApplicationUser> signInManager,
             IConfiguration configuration,
             IEmailService emailService,
             IUserManagement userManagement
