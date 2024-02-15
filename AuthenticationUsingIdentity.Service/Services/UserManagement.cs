@@ -1,6 +1,8 @@
 ﻿using AuthenticationUsingIdentity.Service.Models;
+using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
+using AuthenticationUsingIdentity.Service.Models.User;
 using Azure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -112,5 +114,68 @@ namespace AuthenticationUsingIdentity.Service.Services
             return new ApiResponse<List<string>> { IsSuccess = true, StatusCode = 200, Message = "Roles has been assigned", Response = assignRoleResultList };
         }
 
+        public async Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginModel)
+        {
+            var user = await _userManager.FindByNameAsync(loginModel.UserName);
+ 
+            if (user != null)
+            {
+                /*
+                   * Signs out the user using the _signInManager.SignOutAsync method.
+                    Signs in the user using the _signInManager.PasswordSignInAsync method with the user's email and password.
+                    This logs the user in to the application.*/
+                await _signInManager.SignOutAsync();
+                await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, true);
+
+                if (user.TwoFactorEnabled)
+                {
+                    //generating two factor authentication token
+                    var twoFacAuthToken = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+
+                    //sending two factor authentication via email
+                    var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", twoFacAuthToken);
+                    //_emailService.sendEmail(twoFacAuthMessage);
+                    return new ApiResponse<LoginOtpResponse>
+                    {
+                        IsSuccess = true,
+                        StatusCode = 200,
+                        Message = $"Otp send to the email {user.Email}",
+                        Response = new LoginOtpResponse
+                        {
+                            Token = twoFacAuthToken,
+                            IsTwoFactorEnabled = user.TwoFactorEnabled,
+                            User = user,
+                            
+                        }
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<LoginOtpResponse>
+                    {
+                        IsSuccess = true,
+                        StatusCode = 200,
+                        Message = $"2FA is not enabled",
+                        Response = new LoginOtpResponse
+                        {
+                            Token = string.Empty,
+                            IsTwoFactorEnabled = user.TwoFactorEnabled,
+                            User = user
+                        }
+                    };
+                }
+            }
+            else
+            {
+                return new ApiResponse<LoginOtpResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = 404,
+                    Message = $"User doesn't exist",
+
+                };
+            }
+
+        }
     }
 }

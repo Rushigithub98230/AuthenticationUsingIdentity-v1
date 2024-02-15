@@ -1,6 +1,8 @@
 ﻿using AuthenticationUsingIdentity.Service.Models;
+using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
+using AuthenticationUsingIdentity.Service.Models.User;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -14,6 +16,9 @@ namespace AuthenticationUsingIdentity.Service.Services
     {
         Task<ApiResponse<CreateUserResponse>> CreateUserWithTokenAsync(RegisterUser request);
         Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, IdentityUser newUser);
+        Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginmodel);
+
+
 
     }
 }

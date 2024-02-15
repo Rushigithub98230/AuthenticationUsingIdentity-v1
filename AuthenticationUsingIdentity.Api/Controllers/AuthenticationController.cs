@@ -5,7 +5,7 @@ using AuthenticationUsingIdentity.Api.Models;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Services;
 using AuthenticationUsingIdentity.Service.Models;
-using AuthenticationUsingIdentity.Api.Models.Authentication.Login;
+using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using AuthenticationUsingIdentity.Api.Models.Authentication.Reset;
+using AuthenticationUsingIdentity.Service.Models.User;
 
 
 namespace AuthenticationUsingIdentity.Api.Controllers
@@ -122,76 +123,38 @@ namespace AuthenticationUsingIdentity.Api.Controllers
         [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
+            var loginOtpresponse = await _userManagement.GetOtpByLoginAsync(loginModel);
 
-            //checking the user 
-            var user = await _userManager.FindByNameAsync(loginModel.UserName);
-
-            if (user == null)
+            if (loginOtpresponse.Response != null)
             {
-                return StatusCode(StatusCodes.Status404NotFound, new Response
-                {
-                    Status = "Error",
-                    Message = "User not found",
-                    IsSuccess = false
-                });
-            }
+                var user = loginOtpresponse.Response.User;
 
-            var result = await _userManager.CheckPasswordAsync(user, loginModel.Password);
 
-            if (!result)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest, new Response
-                {
-                    Status = "Error",
-                    Message = "Invalid password",
-                    IsSuccess = false
-                });
-            }
-
-            if (result)
-            {
                 if (user.TwoFactorEnabled)
                 {
-                    /*
-                     * Signs out the user using the _signInManager.SignOutAsync method.
-                      Signs in the user using the _signInManager.PasswordSignInAsync method with the user's email and password.
-                      This logs the user in to the application.*/
-                    await _signInManager.SignOutAsync();
-                    await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, true);
 
-                    //generating two factor authentication token
-                    var twoFacAuthToken = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
-
+                    var token = loginOtpresponse.Response.Token;
                     //sending two factor authentication via email
-                    var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", twoFacAuthToken);
+                    var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", token);
                     _emailService.sendEmail(twoFacAuthMessage);
                     return StatusCode(StatusCodes.Status200OK, new Response
                     {
                         Status = "Successs",
                         Message = $"We have sent an otp to your email {user.Email}",
-                        IsSuccess = true
+                        IsSuccess = loginOtpresponse.IsSuccess
                     });
                 }
 
-                if(user!=null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
+
+               if(user!=null && await  _userManager.CheckPasswordAsync(user, loginModel.Password))
                 {
-                    /* await _signInManager.SignOutAsync();
-                     await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, false);
-                     return StatusCode(StatusCodes.Status200OK, new Response
-                     {
-                         Status = "Successs",
-                         Message = "User logged in successfully",
-                         IsSuccess = true
-                     });*/
-
-
                     //claimlist creation
 
                     var authClaims = new List<Claim>
-                   {
-                     new Claim(ClaimTypes.Name, user.UserName),
-                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                   };
+                        {
+                         new Claim(ClaimTypes.Name, user.UserName),
+                          new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        };
 
                     //add roles to the claims
                     var userRoles = await _userManager.GetRolesAsync(user);
@@ -208,15 +171,16 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     return Ok(new
                     {
                         token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
-                        expiration = jwtToken.ValidTo
+                        expiration = jwtToken.ValidTo,
+                        
                     });
+
                 }
+
             }
-
-
             return Unauthorized();
-
         }
+
 
         [HttpPost]
         [Route("login-2FA")]
@@ -254,7 +218,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     return Ok(new
                     {
                         token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
-                        expiration = jwtToken.ValidTo,                      
+                        expiration = jwtToken.ValidTo,
                         IsSuccess = true
                     });
 
@@ -262,7 +226,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
 
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-              new Response { Status = "Error", Message = $"Invalid Code" , IsSuccess=false});
+              new Response { Status = "Error", Message = $"Invalid Code", IsSuccess = false });
         }
 
 
