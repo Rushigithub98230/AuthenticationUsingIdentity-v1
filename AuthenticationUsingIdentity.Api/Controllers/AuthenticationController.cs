@@ -51,14 +51,10 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             {
 
                 var tokenResponse = await _userManagement.CreateUserWithTokenAsync(request);
-                if (tokenResponse.IsSuccess)
+                if (tokenResponse.IsSuccess && tokenResponse.Response != null)
                 {
-                    if (tokenResponse != null && tokenResponse.Response != null)
-                    {
 
-                        await _userManagement.AssignRoleToUserAsync(request.Roles, tokenResponse.Response.User);
-                    }
-
+                    await _userManagement.AssignRoleToUserAsync(request.Roles, tokenResponse.Response.User);
 
                     //below "Authentication" is controller name
                     var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { token = tokenResponse.Response.Token, email = request.Email }, Request.Scheme);
@@ -117,7 +113,8 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             return StatusCode(StatusCodes.Status500InternalServerError, new Response
             {
                 Status = "Error",
-                Message = "This user does not exist"
+                Message = "This user does not exist",
+                IsSuccess = true
             });
         }
 
@@ -128,7 +125,29 @@ namespace AuthenticationUsingIdentity.Api.Controllers
 
             //checking the user 
             var user = await _userManager.FindByNameAsync(loginModel.UserName);
+
+            if (user == null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new Response
+                {
+                    Status = "Error",
+                    Message = "User not found",
+                    IsSuccess = false
+                });
+            }
+
             var result = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+
+            if (!result)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new Response
+                {
+                    Status = "Error",
+                    Message = "Invalid password",
+                    IsSuccess = false
+                });
+            }
+
             if (result)
             {
                 if (user.TwoFactorEnabled)
@@ -139,7 +158,11 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                       This logs the user in to the application.*/
                     await _signInManager.SignOutAsync();
                     await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, true);
+
+                    //generating two factor authentication token
                     var twoFacAuthToken = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+
+                    //sending two factor authentication via email
                     var twoFacAuthMessage = new Message(new string[] { user.Email! }, "otp confirmation ", twoFacAuthToken);
                     _emailService.sendEmail(twoFacAuthMessage);
                     return StatusCode(StatusCodes.Status200OK, new Response
@@ -147,6 +170,45 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                         Status = "Successs",
                         Message = $"We have sent an otp to your email {user.Email}",
                         IsSuccess = true
+                    });
+                }
+
+                if(user!=null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
+                {
+                    /* await _signInManager.SignOutAsync();
+                     await _signInManager.PasswordSignInAsync(user, loginModel.Password, false, false);
+                     return StatusCode(StatusCodes.Status200OK, new Response
+                     {
+                         Status = "Successs",
+                         Message = "User logged in successfully",
+                         IsSuccess = true
+                     });*/
+
+
+                    //claimlist creation
+
+                    var authClaims = new List<Claim>
+                   {
+                     new Claim(ClaimTypes.Name, user.UserName),
+                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                   };
+
+                    //add roles to the claims
+                    var userRoles = await _userManager.GetRolesAsync(user);
+                    foreach (var role in userRoles)
+                    {
+                        authClaims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+
+                    //generate the token with claims
+                    var jwtToken = GetToken(authClaims);
+
+
+                    //returning the token
+                    return Ok(new
+                    {
+                        token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                        expiration = jwtToken.ValidTo
                     });
                 }
             }
@@ -161,6 +223,8 @@ namespace AuthenticationUsingIdentity.Api.Controllers
         public async Task<IActionResult> LoginWithOTP(string code, string userName)
         {
             var user = await _userManager.FindByNameAsync(userName);
+
+            //checking, does otp/code valid?
             var signIn = await _signInManager.TwoFactorSignInAsync("Email", code, false, false);
             if (signIn.Succeeded)
             {
@@ -190,14 +254,15 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     return Ok(new
                     {
                         token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
-                        expiration = jwtToken.ValidTo
+                        expiration = jwtToken.ValidTo,                      
+                        IsSuccess = true
                     });
 
                 }
 
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-              new Response { Status = "Error", Message = $"Invalid Code" });
+              new Response { Status = "Error", Message = $"Invalid Code" , IsSuccess=false});
         }
 
 
