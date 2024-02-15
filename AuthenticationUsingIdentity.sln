@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthenticationUsingIdentity.Api", "AuthenticationUsingIdentity.Api\AuthenticationUsingIdentity.Api.csproj", "{4CC404F3-3154-4ED6-9700-472D67FE3180}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthenticationUsingIdentity.Api", "AuthenticationUsingIdentity.Api\AuthenticationUsingIdentity.Api.csproj", "{4CC404F3-3154-4ED6-9700-472D67FE3180}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthenticationUsingIdentity.Service", "AuthenticationUsingIdentity.Service\AuthenticationUsingIdentity.Service.csproj", "{F97646CA-4FC1-4B3A-A217-9A5636B126C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthenticationUsingIdentity.Service", "AuthenticationUsingIdentity.Service\AuthenticationUsingIdentity.Service.csproj", "{F97646CA-4FC1-4B3A-A217-9A5636B126C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthenticationUsingIdentity.Data", "AuthenticationUsingIdentity.Data\AuthenticationUsingIdentity.Data.csproj", "{86B487CA-4ECF-4FB8-A962-E8AF8BC856F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{F97646CA-4FC1-4B3A-A217-9A5636B126C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F97646CA-4FC1-4B3A-A217-9A5636B126C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F97646CA-4FC1-4B3A-A217-9A5636B126C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86B487CA-4ECF-4FB8-A962-E8AF8BC856F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86B487CA-4ECF-4FB8-A962-E8AF8BC856F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86B487CA-4ECF-4FB8-A962-E8AF8BC856F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86B487CA-4ECF-4FB8-A962-E8AF8BC856F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

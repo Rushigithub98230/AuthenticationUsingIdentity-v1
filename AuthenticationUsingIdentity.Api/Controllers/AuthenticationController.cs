@@ -107,7 +107,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                 if (result.Succeeded)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                       new Response { Status = "Success", Message = "Email verified Successfully" });
+                       new Response { Status = "Success", Message = "Email verified Successfully" , IsSuccess=true});
                 }
 
             }

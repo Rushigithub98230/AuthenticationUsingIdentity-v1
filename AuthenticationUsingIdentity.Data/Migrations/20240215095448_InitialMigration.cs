@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace AuthenticationUsingIdentity.Api.Migrations
+namespace AuthenticationUsingIdentity.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialMigration : Migration
@@ -163,9 +163,9 @@ namespace AuthenticationUsingIdentity.Api.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "a2018824-ad52-41a1-a1fc-1e58492d534c", "2", "User", "User" },
-                    { "d29d354a-588c-46c3-8047-795bc4305c2a", "1", "Admin", "Admin" },
-                    { "eac5c4e1-2700-4ad5-93b1-b1af41320bc9", "3", "HR", "HR" }
+                    { "5609f663-5a3e-47f3-9d45-26a3f5a7fe0e", "3", "HR", "HR" },
+                    { "d5f5f3f6-e2b3-4bd1-a032-1a27c1192d58", "2", "User", "User" },
+                    { "e0facc37-1f16-4df7-8d16-e07173bdc18c", "1", "Admin", "Admin" }
                 });
 
             migrationBuilder.CreateIndex(
