@@ -4,6 +4,7 @@ using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
 using AuthenticationUsingIdentity.Service.Models.User;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -120,9 +121,24 @@ namespace AuthenticationUsingIdentity.Service.Services
         public async Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginModel)
         {
             var user = await _userManager.FindByNameAsync(loginModel.UserName);
-
+            
             if (user != null)
             {
+                // Check if the user has entered the correct password
+                var passwordResult = await _signInManager.CheckPasswordSignInAsync(user, loginModel.Password, false);
+
+                if (!passwordResult.Succeeded)
+                {
+                    // Return an error response if the password is incorrect
+                    return new ApiResponse<LoginOtpResponse>
+                    {
+                        IsSuccess = false,
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Message = "Invalid password",
+                    };
+                }
+
+
                 /*
                    * Signs out the user using the _signInManager.SignOutAsync method.
                     Signs in the user using the _signInManager.PasswordSignInAsync method with the user's email and password.
