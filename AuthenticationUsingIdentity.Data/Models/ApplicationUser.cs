@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace AuthenticationUsingIdentity.Data.Models
 {
-    public class ApplicationUser:IdentityUser
+    public class ApplicationUser : IdentityUser
     {
-        public string RefreshToken { get; set;}
-        public DateTime RefreshTokenExpiry { get; set;}
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
 
 
     }

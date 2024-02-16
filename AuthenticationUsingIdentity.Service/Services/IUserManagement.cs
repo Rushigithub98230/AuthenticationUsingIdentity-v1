@@ -18,8 +18,10 @@ namespace AuthenticationUsingIdentity.Service.Services
         Task<ApiResponse<CreateUserResponse>> CreateUserWithTokenAsync(RegisterUser request);
         Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, ApplicationUser newUser);
         Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginmodel);
+        Task<ApiResponse<LoginResponse>> GetJwtTokenAsync(ApplicationUser user);
+        Task<ApiResponse<LoginResponse>> LoginUserWithJWTokenAsync(string otp, string userName);
+        Task<ApiResponse<LoginResponse>> RenewAccessTokenAsync(LoginResponse tokens);
 
 
-
-    }       
+    }
 }

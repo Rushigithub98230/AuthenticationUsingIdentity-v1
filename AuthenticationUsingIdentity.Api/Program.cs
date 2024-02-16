@@ -25,10 +25,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+
 //Add config for required email
 builder.Services.Configure<IdentityOptions>(opts => opts.SignIn.RequireConfirmedEmail = true);
 
-builder.Services.Configure < DataProtectionTokenProviderOptions>(opts => opts.TokenLifespan = TimeSpan.FromHours(3));
+// Set the expiration time for the OTP 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(opts => opts.TokenLifespan = TimeSpan.FromHours(3));
 
 //Adding authentication
 builder.Services.AddAuthentication(options =>
@@ -47,9 +49,11 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        RequireExpirationTime = true,
         ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
         ValidAudience = builder.Configuration["JWT:ValidAudience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"])),
+        ClockSkew = TimeSpan.Zero,
     };
 });
 
@@ -61,8 +65,8 @@ var emailConfig = builder.Configuration
 
 builder.Services.AddSingleton(emailConfig);
 
-builder.Services.AddScoped<IEmailService,EmailService>();
-builder.Services.AddScoped<IUserManagement,UserManagement>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserManagement, UserManagement>();
 
 
 var app = builder.Build();
@@ -71,7 +75,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(); 
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

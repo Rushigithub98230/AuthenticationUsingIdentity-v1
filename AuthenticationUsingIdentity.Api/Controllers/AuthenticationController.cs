@@ -24,8 +24,6 @@ namespace AuthenticationUsingIdentity.Api.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IUserManagement _userManagement;
@@ -39,10 +37,8 @@ namespace AuthenticationUsingIdentity.Api.Controllers
             )
         {
             _userManager = userManager;
-            _roleManager = roleManager;
             _configuration = configuration;
             _emailService = emailService;
-            _signInManager = signInManager;
             _userManagement = userManagement;
         }
 
@@ -63,7 +59,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                     var message = new Message(new String[] { request.Email! }, "Confirmation email Link", confirmationLink);
                     _emailService.sendEmail(message);
                     return StatusCode(StatusCodes.Status200OK,
-                    new Response { Status = "Success", Message = $"User created successfully", IsSuccess = true });
+                    new Response { Status = "Success", Message = $"User created successfully and we have sent an email confirmation mail on your email", IsSuccess = true });
 
                 }
 
@@ -75,7 +71,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new Response
                 {
                     Status = "Error",
-                    Message = $"Internal Server Error: {ex.Message}"
+                    Message = $"Internal Server Error: {ex}"
                 });
             }
         }
@@ -108,7 +104,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                 if (result.Succeeded)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                       new Response { Status = "Success", Message = "Email verified Successfully" , IsSuccess=true});
+                       new Response { Status = "Success", Message = "Email verified Successfully", IsSuccess = true });
                 }
 
             }
@@ -147,37 +143,12 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                 }
 
 
-               if(user!=null && await  _userManager.CheckPasswordAsync(user, loginModel.Password))
+                if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
                 {
-                    //claimlist creation
-
-                    var authClaims = new List<Claim>
-                        {
-                         new Claim(ClaimTypes.Name, user.UserName),
-                          new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                        };
-
-                    //add roles to the claims
-                    var userRoles = await _userManager.GetRolesAsync(user);
-                    foreach (var role in userRoles)
-                    {
-                        authClaims.Add(new Claim(ClaimTypes.Role, role));
-                    }
-
-                    //generate the token with claims
-                    var jwtToken = GetToken(authClaims);
-
-
-                    //returning the token
-                    return Ok(new
-                    {
-                        token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
-                        expiration = jwtToken.ValidTo,
-                        
-                    });
+                    var serviceResponse = await _userManagement.GetJwtTokenAsync(user);
+                    return Ok(serviceResponse);
 
                 }
-
             }
             return Unauthorized();
         }
@@ -187,47 +158,13 @@ namespace AuthenticationUsingIdentity.Api.Controllers
         [Route("login-2FA")]
         public async Task<IActionResult> LoginWithOTP(string code, string userName)
         {
-            var user = await _userManager.FindByNameAsync(userName);
-
-            //checking, does otp/code valid?
-            var signIn = await _signInManager.TwoFactorSignInAsync("Email", code, false, false);
-            if (signIn.Succeeded)
+            var jwt = await _userManagement.LoginUserWithJWTokenAsync(code, userName);
+            if (jwt.IsSuccess)
             {
-                if (user != null)
-                {
-
-                    //claimlist creation
-
-                    var authClaims = new List<Claim>
-                   {
-                     new Claim(ClaimTypes.Name, user.UserName),
-                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                   };
-
-                    //add roles to the claims
-                    var userRoles = await _userManager.GetRolesAsync(user);
-                    foreach (var role in userRoles)
-                    {
-                        authClaims.Add(new Claim(ClaimTypes.Role, role));
-                    }
-
-                    //generate the token with claims
-                    var jwtToken = GetToken(authClaims);
-
-
-                    //returning the token
-                    return Ok(new
-                    {
-                        token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
-                        expiration = jwtToken.ValidTo,
-                        IsSuccess = true
-                    });
-
-                }
-
+                return Ok(jwt);
             }
-            return StatusCode(StatusCodes.Status403Forbidden,
-              new Response { Status = "Error", Message = $"Invalid Code", IsSuccess = false });
+            return StatusCode(StatusCodes.Status404NotFound,
+                new Response { Status = "Success", Message = $"Invalid Code" });
         }
 
 
@@ -298,25 +235,18 @@ namespace AuthenticationUsingIdentity.Api.Controllers
                 model
             });
         }
-        private JwtSecurityToken GetToken(List<Claim> authClaims)
+
+        [HttpPost]
+        [Route("Refresh-Token")]
+        public async Task<IActionResult> RefreshToken([FromBody] LoginResponse tokens)
         {
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-            var validIssuer = _configuration["JWT:ValidIssuer"];
-            var validAudience = _configuration["JWT:ValidAudience"];
-
-            var tokenDescriptor = new SecurityTokenDescriptor
+            var jwt = await _userManagement.RenewAccessTokenAsync(tokens);
+            if (jwt.IsSuccess)
             {
-                Issuer = validIssuer,
-                Audience = validAudience,
-                Expires = DateTime.UtcNow.AddHours(1),
-                Subject = new ClaimsIdentity(authClaims),
-                SigningCredentials = new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = (JwtSecurityToken)tokenHandler.CreateToken(tokenDescriptor);
-
-            return token;
+                return Ok(jwt);
+            }
+            return StatusCode(StatusCodes.Status404NotFound,
+                new Response { Status = "Success", Message = $"Invalid Code" });
         }
 
 

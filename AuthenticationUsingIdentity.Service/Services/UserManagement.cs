@@ -4,17 +4,16 @@ using AuthenticationUsingIdentity.Service.Models.Authentication.Login;
 using AuthenticationUsingIdentity.Service.Models.Authentication.SignUp;
 using AuthenticationUsingIdentity.Service.Models.Authentication.User;
 using AuthenticationUsingIdentity.Service.Models.User;
-using Azure;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
+using Microsoft.IdentityModel.Tokens;
 using System.Data;
-using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace AuthenticationUsingIdentity.Service.Services
 {
@@ -23,6 +22,7 @@ namespace AuthenticationUsingIdentity.Service.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IConfiguration _configuration;
 
         public UserManagement(
             UserManager<ApplicationUser> userManager,
@@ -35,6 +35,7 @@ namespace AuthenticationUsingIdentity.Service.Services
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
+            _configuration = configuration;
         }
 
         public async Task<ApiResponse<CreateUserResponse>> CreateUserWithTokenAsync([FromBody] RegisterUser request)
@@ -53,7 +54,8 @@ namespace AuthenticationUsingIdentity.Service.Services
                 Email = request.Email,
                 UserName = request.UserName,
                 SecurityStamp = Guid.NewGuid().ToString(),
-                TwoFactorEnabled = true
+                TwoFactorEnabled = true,
+
             };
 
             // Create the user
@@ -118,7 +120,7 @@ namespace AuthenticationUsingIdentity.Service.Services
         public async Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginModel)
         {
             var user = await _userManager.FindByNameAsync(loginModel.UserName);
- 
+
             if (user != null)
             {
                 /*
@@ -146,7 +148,7 @@ namespace AuthenticationUsingIdentity.Service.Services
                             Token = twoFacAuthToken,
                             IsTwoFactorEnabled = user.TwoFactorEnabled,
                             User = user,
-                            
+
                         }
                     };
                 }
@@ -178,5 +180,149 @@ namespace AuthenticationUsingIdentity.Service.Services
             }
 
         }
+
+        public async Task<ApiResponse<LoginResponse>> GetJwtTokenAsync(ApplicationUser user)
+        {
+            var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                };
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var role in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var jwtToken = GetToken(authClaims); //access token
+            var refreshToken = GenerateRefreshToken();
+            _ = int.TryParse(_configuration["JWT:RefreshTokenValidity"], out int refreshTokenValidity);
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(refreshTokenValidity);
+
+            await _userManager.UpdateAsync(user);
+
+            return new ApiResponse<LoginResponse>
+            {
+                Response = new LoginResponse()
+                {
+                    AccessToken = new TokenType()
+                    {
+                        Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                        ExpiryTokenDate = jwtToken.ValidTo
+                    },
+                    RefreshToken = new TokenType()
+                    {
+                        Token = user.RefreshToken,
+                        ExpiryTokenDate = (DateTime)user.RefreshTokenExpiry
+                    }
+                },
+
+                IsSuccess = true,
+                StatusCode = 200,
+                Message = $"Token created"
+            };
+        }
+
+        public async Task<ApiResponse<LoginResponse>> LoginUserWithJWTokenAsync(string otp, string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            var signIn = await _signInManager.TwoFactorSignInAsync("Email", otp, false, false);
+            if (signIn.Succeeded)
+            {
+                if (user != null)
+                {
+                    return await GetJwtTokenAsync(user);
+                }
+            }
+            return new ApiResponse<LoginResponse>()
+            {
+
+                Response = new LoginResponse()
+                {
+
+                },
+                IsSuccess = false,
+                StatusCode = 400,
+                Message = $"Invalid Otp"
+            };
+        }
+
+        public async Task<ApiResponse<LoginResponse>> RenewAccessTokenAsync(LoginResponse tokens)
+        {
+            var accessToken = tokens.AccessToken;
+            var refreshToken = tokens.RefreshToken;
+            var principal = GetClaimsPrincipal(accessToken.Token);
+            var user = await _userManager.FindByNameAsync(principal.Identity.Name);
+            if (refreshToken.Token != user.RefreshToken && refreshToken.ExpiryTokenDate <= DateTime.Now)
+            {
+                return new ApiResponse<LoginResponse>
+                {
+
+                    IsSuccess = false,
+                    StatusCode = 400,
+                    Message = $"Token invalid or expired"
+                };
+            }
+            var respnse = await GetJwtTokenAsync(user);
+            return respnse;
+        }
+
+
+        #region private method region
+
+        private JwtSecurityToken GetToken(List<Claim> authClaims)
+        {
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+            var validIssuer = _configuration["JWT:ValidIssuer"];
+            var validAudience = _configuration["JWT:ValidAudience"];
+            _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
+            var expirationTimeUtc = DateTime.UtcNow.AddMinutes(tokenValidityInMinutes);
+            var localTimeZone = TimeZoneInfo.Local;
+            var expirationTimeInLocalTimeZone = TimeZoneInfo.ConvertTimeFromUtc(expirationTimeUtc, localTimeZone);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Issuer = validIssuer,
+                Audience = validAudience,
+                Expires = expirationTimeInLocalTimeZone,
+                Subject = new ClaimsIdentity(authClaims), // Here we have set claims based on the user's JWT token
+                SigningCredentials = new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = (JwtSecurityToken)tokenHandler.CreateToken(tokenDescriptor);
+
+            return token;
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new Byte[64];
+            var range = RandomNumberGenerator.Create();
+            range.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private ClaimsPrincipal GetClaimsPrincipal(string accessToken)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
+                ValidateLifetime = false
+            };
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(accessToken, tokenValidationParameters, out SecurityToken securityToken);
+
+            return principal;
+        }
+
+
+
+        #endregion
     }
 }

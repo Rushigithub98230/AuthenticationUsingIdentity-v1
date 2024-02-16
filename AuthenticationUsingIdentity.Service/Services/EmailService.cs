@@ -13,22 +13,22 @@ namespace AuthenticationUsingIdentity.Service.Services
         public EmailService(EmailConfiguration emailConfig)
         {
             _emailConfig = emailConfig;
-           
+
         }
 
         public void sendEmail(Message message)
         {
-            var emailMessage=CreateEmailMessage(message);
+            var emailMessage = CreateEmailMessage(message);
             Send(emailMessage);
         }
 
         private MimeMessage CreateEmailMessage(Message message)
-        { 
-            var emailMessage=new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress("email",_emailConfig.From));
+        {
+            var emailMessage = new MimeMessage();
+            emailMessage.From.Add(new MailboxAddress("email", _emailConfig.From));
             emailMessage.To.AddRange(message.To);
-            emailMessage.Subject=message.Subject;
-            emailMessage.Body=new TextPart(MimeKit.Text.TextFormat.Text) { Text=message.Content };
+            emailMessage.Subject = message.Subject;
+            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Text) { Text = message.Content };
 
             return emailMessage;
 
@@ -37,7 +37,7 @@ namespace AuthenticationUsingIdentity.Service.Services
 
         public void Send(MimeMessage mailMessage)
         {
-            using var client= new MailKit.Net.Smtp.SmtpClient();
+            using var client = new MailKit.Net.Smtp.SmtpClient();
             try
             {
                 client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, true);

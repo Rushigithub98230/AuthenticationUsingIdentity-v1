@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AuthenticationUsingIdentity.Api.Controllers
 {
-    [Authorize(Roles="Admin,HR,User")]
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
@@ -12,7 +12,7 @@ namespace AuthenticationUsingIdentity.Api.Controllers
         [HttpGet("Employees")]
         public async Task<IEnumerable<string>> Get()
         {
-            return new List<string> { "Apeksha", "Rushieksh", "rohit", "Karmanye"};
+            return new List<string> { "Apeksha", "Rushieksh", "rohit", "Karmanye" };
         }
     }
 }

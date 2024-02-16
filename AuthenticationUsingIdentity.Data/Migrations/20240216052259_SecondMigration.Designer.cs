@@ -4,6 +4,7 @@ using AuthenticationUsingIdentity.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthenticationUsingIdentity.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240216052259_SecondMigration")]
+    partial class SecondMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -122,21 +125,21 @@ namespace AuthenticationUsingIdentity.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "9af95476-096c-4707-b8b7-28018e48bbe4",
+                            Id = "4abc78b2-1734-40b1-a164-6a91f19eb9c1",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "97f3fa9f-961d-4c24-ae81-6a0d454e1152",
+                            Id = "e6028346-524c-4989-9f8c-1859ae9ef8db",
                             ConcurrencyStamp = "2",
                             Name = "User",
                             NormalizedName = "User"
                         },
                         new
                         {
-                            Id = "2b56fc4f-c169-4d33-a6e0-bc6f800401f4",
+                            Id = "8bbc29c8-396c-4e31-aae4-a51b10848ebf",
                             ConcurrencyStamp = "3",
                             Name = "HR",
                             NormalizedName = "HR"

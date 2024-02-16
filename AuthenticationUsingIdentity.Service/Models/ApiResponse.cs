@@ -8,7 +8,7 @@ namespace AuthenticationUsingIdentity.Service.Models
 {
     public class ApiResponse<T>
     {
-        public bool IsSuccess {  get; set; }
+        public bool IsSuccess { get; set; }
         public string? Message { get; set; }
 
         public int StatusCode { get; set; }
