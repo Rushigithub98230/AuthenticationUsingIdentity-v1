@@ -4,11 +4,11 @@ This repository contains a project that implement JWT authentication and authori
 
 Here are some of the key technologies used in this project:
 
-C#
-ASP.NET Core Web API
-Entity Framework
-Custom Identity
-SMTP for email service
-Identity Framework
-SQL Server
+C#,
+ASP.NET Core Web API,
+Entity Framework,
+Custom Identity,
+SMTP for email service,
+Identity Framework,
+SQL Server,
 JWT
