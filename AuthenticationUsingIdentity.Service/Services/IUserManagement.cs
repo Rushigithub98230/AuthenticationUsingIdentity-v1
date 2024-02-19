@@ -19,7 +19,7 @@ namespace AuthenticationUsingIdentity.Service.Services
         Task<ApiResponse<List<string>>> AssignRoleToUserAsync(List<string> roles, ApplicationUser newUser);
         Task<ApiResponse<LoginOtpResponse>> GetOtpByLoginAsync(LoginModel loginmodel);
         Task<ApiResponse<LoginResponse>> GetJwtTokenAsync(ApplicationUser user);
-        Task<ApiResponse<LoginResponse>> LoginUserWithJWTokenAsync(string otp, string userName);
+        Task<ApiResponse<LoginResponse>> LoginUserWithJWTokenAsync(string otp, string userName);//it checks whether otp is valid or not , if otp is valid then it will generate token otherwise is returns Invalid Otp
         Task<ApiResponse<LoginResponse>> RenewAccessTokenAsync(LoginResponse tokens);
 
 
